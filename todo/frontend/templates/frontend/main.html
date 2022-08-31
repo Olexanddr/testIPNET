@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        .addTask{
+            display:none;
+        }
+        .subtask_form{
+            display:none;
+        }
+        #hello_user{
+            display: inline-block;
+            margin-left: 30%;
+            font-size: 20px;
+        }
+        #add{
+            display:inline-block;
+            font-size: 20px;
+            margin-bottom: 50px;
+            background-color: green;
+            color:white;
+            margin-left: 20px;
+        }
+        .task > button,h3{
+            display: inline-block;
+        }
+        .plus{
+            background-color: #ffffffff;
+            margin-right: 20px;
+            margin-left: 20px;
+        }
+        .delete{
+            background-color: red;
+            color: white;
+            font-size: 20px;
+            float: right ;
+            vertical-align: baseline;
+        }
+
+        .save{
+            font-size: 20px;
+            background-color: green;
+            color:white;
+            float: right;
+            margin-right: 20px;
+        }
+        li{
+            margin-bottom: 30px;
+        }
+        input{
+            font-size: 20px;
+            margin-left: 20px;
+        }
+        .task{
+            margin-top: 10px;
+        }
+
+        .radioRed{
+            transform: scale(1.5);
+           box-shadow:0 0 15px 0px red inset;
+           accent-color: red;
+        }
+        .radioGreen{
+            transform: scale(1.5);
+           box-shadow:0 0 15px 0px green inset;
+           accent-color: green;
+        }
+
+        .radioBlue{
+            transform: scale(1.5);
+           box-shadow:0 0 15px 0px blue inset;
+           accent-color: blue;
+        }
+        .pop-up{
+            border: 2px solid black;
+            width: 20%;
+            height: 100px;
+            display: none;
+        }
+        .pop-up>.save{
+            float: left;
+            margin-right: 10px;
+            margin-left: 10px;
+        }
+        .pop-up>.delete{
+            float: left;
+        }
+        .logout{
+            background-color: grey;
+            color: white;
+            font-size: 20px;
+            margin-left: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <button id = "add" onclick = "addTodo()">Add TODO</button>
+    <h4 id = "hello_user">Hello</h4>
+    <button id = "logout" onclick = "logout()" class = "logout">logout</button>
+    <div class = "addTask" id = "addTask">
+        <form id = "addForm">
+            <input type = "text" id = "titleTask">
+            <input type = "radio" name = "color" value  = "red" class = "radioRed" />
+             <input type = "radio" name = "color" value  = "green" class = "radioGreen">
+             <input type = "radio" name = "color" value  = "blue" class = "radioBlue">
+
+            <button class =  "delete" onclick = "cancelAdd()">Cancel</button>
+            <button class = "save" onclick = "saveTask()">Save</button>
+
+        </form>
+
+    </div>
+    <div id = "hello"></div>
+    <div class = "pop-up" id = "pop-up">
+        <h3 id = "deleteID">Delete</h3><br>
+        <span id = "delIdInf" style = "display:none"></span>
+        <button class = "save" onclick = "deleteTask()" id = "">Delete</button>
+        <button class = "delete" onclick = "cancelDelete()">Cancel</button>
+
+    </div>
+    <script>
+        build();
+
+        function getCookie(name) {
+		    var cookieValue = null;
+		    if (document.cookie && document.cookie !== '') {
+		        var cookies = document.cookie.split(';');
+		        for (var i = 0; i < cookies.length; i++) {
+		            var cookie = cookies[i].trim();
+		            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+		                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+		                break;
+		            }
+		        }
+		    }
+		    return cookieValue;
+		}
+		var csrftoken = getCookie('csrftoken');
+
+        function saveTask(){
+            let title = document.getElementById("titleTask").value
+            var color;
+            const colors = document.querySelectorAll('input[name="color"]')
+            for(let i of colors){
+                if(i.checked){
+                    color = i.value;
+                }
+            }
+            var url = "http://127.0.0.1:8000/api/TaskList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({'title': title, "color": color, "place": "task"})
+            }).then(function(response){
+                build();
+            })
+            document.getElementById("addTask").style.display = "none";
+
+        }
+
+         function cancelAdd(){
+            document.getElementById("addTask").style.display = "none";
+        }
+
+
+
+        function addTodo(){
+            document.getElementById("addTask").style.display = "block";
+        }
+
+        function build(){
+        var subtask = "";
+        var url = "http://127.0.0.1:8000/api/TaskList";
+        fetch(url)
+        .then((resp) => resp.json())
+        .then(function(data){
+        document.getElementById("hello_user").innerHTML = "Hello "+data["user"];
+        console.log(data);
+            for(var i in data["tasks"]){
+                subtasks = `
+                <ul id = "subtasks_${data["tasks"][i]["id"]}">
+                `
+                for(var j in data['tasks'][i]["subtask"]){
+                    console.log(j);
+                    subtasks+=`<li id = "sub_${data['tasks'][i]["subtask"][j]["id"]}">${data['tasks'][i]["subtask"][j]["title"]} <button class = "delete" onclick = "removeSubtask(${data['tasks'][i]["subtask"][j]["id"]})">remove</button></li>`
+                }
+                subtasks+="</ul>"
+                block = `
+                    <div style = "background-color: ${data["tasks"][i]["color"]}">
+                    <button onclick = "addSubtask(${data['tasks'][i]['id']})" class = "plus">+</button>
+                    <h3>${data['tasks'][i]['title']}</h3>
+                    <button class = "delete" onclick = "deletePopup(${data['tasks'][i]['id']})">remove</button>
+                    </div>
+                    ${subtasks}
+                    <form class = "subtask_form" id = "block_${data['tasks'][i]['id']}">
+                        <input type = "text" id = "subtask_title_${data['tasks'][i]['id']}">
+                        <button class = "save" onclick = "saveSubtask(${data['tasks'][i]['id']})">Save</button>
+                        <button class = "delete" onclick = "cancelSubtask(${data['tasks'][i]['id']})">Cancel</button>
+                    </form>
+                `
+
+                let tasks_block = document.createElement("div");
+                tasks_block.id = `task_block_${data['tasks'][i]['id']}`;
+                tasks_block.className = "task";
+                tasks_block.innerHTML = block;
+                document.getElementById("hello").prepend(tasks_block);
+            }
+        })
+        }
+        function addSubtask(id){
+            document.getElementById("block_"+id).style.display = "block";
+        }
+
+        function cancelSubtask(id){
+            document.getElementById("block_"+id).style.display = "none";
+        }
+
+        function saveSubtask(id){
+            let title = document.getElementById("subtask_title_"+id).value
+            var url = "http://127.0.0.1:8000/api/TaskList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({'title': title,"head_id": id, "place": "subtask"})
+            }).then(function(response){
+                build();
+            })
+        }
+        function removeSubtask(id){
+            var url = "http://127.0.0.1:8000/api/TaskList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({"id": id, "place": "delete_subtask"})
+            }).then(function(response){
+                document.getElementById("sub_"+id).remove()
+            })
+        }
+
+        function deleteTask(){
+            id = document.getElementById("delIdInf").textContent;
+            var url = "http://127.0.0.1:8000/api/TaskList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({"id": id, "place": "delete_task"})
+            }).then(function(response){
+                document.getElementById("task_block_"+id).remove()
+            })
+            document.getElementById("pop-up").style.display = "none";
+        }
+
+        function deletePopup(id){
+            document.getElementById("pop-up").style.display = "block";
+            document.getElementById("deleteID").innerHTML = "Delete "+id;
+            document.getElementById("delIdInf").innerHTML = id;
+        }
+        function cancelDelete(){
+            document.getElementById("pop-up").style.display = "none";
+        }
+
+        function logout(){
+            var url = "http://127.0.0.1:8000/api/UserList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({"place": "logout"})
+            }).then(function(response){
+                window.location.href = "http://127.0.0.1:8000/login";
+            })
+        }
+
+
+    </script>
+</body>
+</html>

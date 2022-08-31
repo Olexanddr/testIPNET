@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Register</title>
+    <style>
+        h1{
+            text-align: center;
+        }
+        form{
+            margin-left: 42%;
+        }
+        input{
+            margin-top:10px;
+            font-size: 20px;
+        }
+        .errors{
+            text-align: center;
+            color: red;
+            font-size: 20px;
+        }
+        button{
+            margin-top: 20px;
+            background-color: green;
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Registration Page</h1>
+    <div class = "errors" id = "errors">
+
+    </div>
+    <form>
+        <input type = "text" id = "login"><br>
+        <input type = "password" id = "password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"><br>
+        <input type = "password" id = "password_2" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"><br>
+        <button type = "button" onclick = "register()">Enter</button>
+    </form>
+    <script>
+        function getCookie(name) {
+		    var cookieValue = null;
+		    if (document.cookie && document.cookie !== '') {
+		        var cookies = document.cookie.split(';');
+		        for (var i = 0; i < cookies.length; i++) {
+		            var cookie = cookies[i].trim();
+		            // Does this cookie string begin with the name we want?
+		            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+		                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+		                break;
+		            }
+		        }
+		    }
+		    return cookieValue;
+		}
+		var csrftoken = getCookie('csrftoken');
+        function register(){
+            let login = document.getElementById("login").value
+            let password = document.getElementById("password").value
+            let password_2 = document.getElementById("password_2").value
+            if (password == password_2){
+            if( !(check_password(password))){
+                alert("Ok")
+               }
+            else{
+            var url = "http://127.0.0.1:8000/api/UserList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({'login': login, "password": password, "place": "register"})
+            }).then(function(response){
+                response.json().then(data => {
+                  if(data["send"]){
+                    window.location.href = "http://127.0.0.1:8000";
+                  }
+                  else{
+                    let error = document.createElement("p")
+                    error.innerHTML = "Такий користувач вже є!";
+                    document.getElementById("errors").append(error);
+                  }
+                })
+            })
+            }
+
+            }
+        }
+
+        function check_password(password){
+            let uppers = /[A-Z]/.test(password);
+            let lowers = /[a-z]/.test(password);
+             let numbers = /\d/.test(password);
+            let onlylatin = /^[A-Za-z\d]{8,}$/.test(password);
+            if (!(uppers && lowers && numbers && onlylatin)){
+                alert("aaaa")
+                document.getElementById("errors").textContent+="8 symbols, upper and lower case, letters and numbers";
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

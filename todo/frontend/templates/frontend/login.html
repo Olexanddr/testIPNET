@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Login</title>
+    <style>
+        h1{
+            text-align: center;
+        }
+        form{
+            margin-left: 42%;
+        }
+        input{
+            margin-top:10px;
+            font-size: 20px;
+        }
+        .errors{
+            text-align: center;
+            color: red;
+            font-size: 20px;
+        }
+        button{
+            margin-top: 20px;
+            background-color: green;
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Login page</h1>
+    <form>
+        <input type = "text" id = "login"><br>
+        <input type = "password" id = "password"><br>
+        <button type = "button" onclick = "enter()">Enter</button>
+    </form>
+    <script>
+        function getCookie(name) {
+		    var cookieValue = null;
+		    if (document.cookie && document.cookie !== '') {
+		        var cookies = document.cookie.split(';');
+		        for (var i = 0; i < cookies.length; i++) {
+		            var cookie = cookies[i].trim();
+		            // Does this cookie string begin with the name we want?
+		            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+		                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+		                break;
+		            }
+		        }
+		    }
+		    return cookieValue;
+		}
+		var csrftoken = getCookie('csrftoken');
+
+        function enter(){
+            let login = document.getElementById("login").value;
+            let password = document.getElementById("password").value;
+
+            var url = "http://127.0.0.1:8000/api/UserList";
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-type":"application/json",
+                    'X-CSRFToken':csrftoken,
+                },
+                body:JSON.stringify({'login': login, "password": password, "place": "login"})
+            }).then(function(response){
+                response.json().then(data => {
+                  if(data["send"]){
+                    window.location.href = "http://127.0.0.1:8000";
+                  }
+                })
+            })
+
+        }
+    </script>
+</body>
+</html>
